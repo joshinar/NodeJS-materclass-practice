@@ -1,4 +1,7 @@
 const express = require("express");
+const protect = require("../middleware/auth");
+// include other resource routes for re-routing
+const courseRouter = require("./courses");
 const router = express.Router();
 const {
   getBootcamps,
@@ -6,14 +9,19 @@ const {
   createBootcamp,
   updateBootcamp,
   deleteBootcamp,
-  geBootcampsInRadius
+  geBootcampsInRadius,
+  bootcampPhotoUpload
 } = require("../controllers/bootcamps");
+
+// reroute into other routers
+router.use("/:bootcampId/courses", courseRouter);
 
 router.route("/").get(getBootcamps);
 router.route("/:id").get(getBootcamp);
-router.route("/").post(createBootcamp);
-router.route("/:id").put(updateBootcamp);
-router.route("/:id").delete(deleteBootcamp);
+router.route("/").post(protect, createBootcamp);
+router.route("/:id").put(protect, updateBootcamp);
+router.route("/:id").delete(protect, deleteBootcamp);
+router.route("/:id/photo").put(protect, bootcampPhotoUpload);
 router.route("/radius/:zipcode/:distance").get(geBootcampsInRadius);
 
 module.exports = router;

@@ -1,5 +1,7 @@
 const BootCamp = require("../models/Bootcamp");
 const geocoder = require("../utils/geocoder");
+const path = require("path");
+
 // @desc : gets all bootcamps
 // @route : GET /api/v1/bootcamps
 // @access : Public
@@ -70,6 +72,7 @@ exports.getBootcamp = async (req, res, next) => {
 // @access : private
 exports.createBootcamp = async (req, res, next) => {
   try {
+    
     const bootcamp = await new BootCamp(req.body).save();
     res.status(201).json({ success: true, data: bootcamp });
   } catch (error) {
@@ -127,6 +130,35 @@ exports.geBootcampsInRadius = async (req, res, next) => {
       success: true,
       data: bootcamps
     });
+  } catch (error) {
+    res.status(400).json({ success: false });
+  }
+};
+
+// @desc : upload a photo to bootcamp
+// @route : PUT /api/v1/bootcamps/:id/photo
+// @access : private
+exports.bootcampPhotoUpload = async (req, res, next) => {
+  try {
+    const bootcamp = await BootCamp.findById(req.params.id);
+    if (!bootcamp) {
+      res.status(400).json({ success: false });
+    }
+    let file = req.files.file;
+    if (
+      file.mimetype.startsWith("image") &&
+      file.size < process.env.FILE_SIZE
+    ) {
+      file.name = `photo_${bootcamp._id}${path.extname(file.name)}`;
+      file.mv(`${process.env.FILE_UPLOAD_PATH}/${file.name}`, async err => {
+        if (err) {
+          console.log(err);
+          res.status(500).json({ success: false });
+        }
+        await BootCamp.findByIdAndUpdate(req.params.id, { photo: file.name });
+        res.status(200).json({ success: true, data: file.name });
+      });
+    }
   } catch (error) {
     res.status(400).json({ success: false });
   }
